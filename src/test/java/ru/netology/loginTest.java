@@ -9,7 +9,7 @@ import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
 
 
-public class cardDeliveryService {
+public class loginTest {
 
     @BeforeEach
     void setup() {
