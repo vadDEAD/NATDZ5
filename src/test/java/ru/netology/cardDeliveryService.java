@@ -1,43 +1,52 @@
 package ru.netology;
 
-import org.junit.jupiter.api.Test;
-import com.codeborne.selenide.Configuration;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
-
-import java.time.Duration;
-
-import static com.codeborne.selenide.Condition.appear;
-
-import com.codeborne.selenide.Condition;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 
 public class cardDeliveryService {
 
-
-    public String dataGenerator(int days) {
-        return LocalDate.now().plusDays(days).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+    @BeforeEach
+    void setup() {
+        open("http://localhost:9999/");
     }
-
 
     @Test
     void testV1() {
-        String sendData = dataGenerator(3);
-        open("http://localhost:9999/");
 
-        $("[data-test-id='city'] input").setValue("Санкт-Петербург");
-        $("[data-test-id='date'] input").doubleClick().sendKeys(sendData);
-        $("[data-test-id='name'] input").setValue("Петр Петров");
-        $("[data-test-id='phone'] input").setValue("+79998887766");
+
+        var validUser = ru.netology.DataGenerator.Registration.generateUser("ru");
+        var daysToAddForFirstMeeting = 4;
+        var firstMeetingDate = ru.netology.DataGenerator.generateDate(daysToAddForFirstMeeting);
+        var daysToAddForSecondMeeting = 7;
+        var secondMeetingDate = ru.netology.DataGenerator.generateDate(daysToAddForSecondMeeting);
+        $("[data-test-id='city'] input").setValue(ru.netology.DataGenerator.generateCity());
+        $("[data-test-id='date'] input").doubleClick().sendKeys(firstMeetingDate);
+        $("[data-test-id='name'] input").setValue(validUser.getName());
+        $("[data-test-id='phone'] input").setValue(validUser.getPhone());
         $("[data-test-id='agreement']").click();
         $(".button__text").click();
-        $("div[data-test-id='notification']").should(appear, Duration.ofSeconds(15)).shouldHave(Condition.text("Встреча успешно забронирована на " + sendData));
-
-
+        $("[data-test-id='success-notification'] .notification__title")
+                .shouldHave(exactText("Успешно!"));
+        $("[data-test-id='success-notification'] .notification__content")
+                .shouldHave(exactText("Встреча успешно запланирована на " + firstMeetingDate))
+                .should(visible);
+        $("[data-test-id='date'] input").doubleClick().sendKeys(secondMeetingDate);
+        $(".button__text").click();
+        $("[data-test-id='replan-notification'] .notification__content")
+                .shouldHave(text("У вас уже запланирована встреча на другую дату. Перепланировать?"))
+                .shouldBe(visible);
+        $("[data-test-id='replan-notification'] .button__text").click();
+        $("[data-test-id='success-notification'] .notification__content")
+                .shouldHave(exactText("Встреча успешно запланирована на " + secondMeetingDate))
+                .should(visible);
     }
+
+
 }
 
